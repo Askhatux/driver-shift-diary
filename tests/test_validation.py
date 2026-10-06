@@ -18,6 +18,12 @@ def test_commission_bounds_are_inclusive(client, commission):
     assert response.status_code == 201, response.text
 
 
+def test_id_of_64_chars_is_accepted(client):
+    response = client.post("/api/trips", json={**VALID, "id": "x" * 64})
+
+    assert response.status_code == 201, response.text
+
+
 @pytest.mark.parametrize(
     ("patch", "message"),
     [
@@ -44,6 +50,9 @@ def test_commission_bounds_are_inclusive(client, commission):
         pytest.param({"id": None}, None, id="id null"),
         pytest.param({"payment": MISSING}, None, id="payment missing"),
         pytest.param({"start": MISSING}, None, id="start missing"),
+        pytest.param({"id": 1}, None, id="id number"),
+        pytest.param({"id": ""}, None, id="id empty"),
+        pytest.param({"id": "x" * 65}, None, id="id too long"),
     ],
 )
 def test_invalid_trip_is_rejected(client, patch, message):

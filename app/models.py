@@ -25,7 +25,7 @@ Moment = Annotated[datetime, BeforeValidator(_require_string), AfterValidator(_r
 
 
 class Trip(BaseModel):
-    id: str
+    id: str = Field(min_length=1, max_length=64)
     start: Moment
     end: Moment
     amount: StrictInt = Field(gt=0, le=INT64_MAX)

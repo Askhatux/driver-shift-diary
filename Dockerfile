@@ -13,11 +13,11 @@ RUN mkdir -p /data
 
 COPY app ./app
 COPY static ./static
-COPY data/trips.json ./data/trips.json
+COPY data/trips.json data/demo-trips.json ./data/
 
 ENV PATH="/app/.venv/bin:$PATH" \
     DB_PATH=/data/trips.db \
-    TRIPS_FILE=/app/data/trips.json \
+    TRIPS_FILE=/app/data/demo-trips.json \
     DAY_TZ_OFFSET=+05:00
 
 EXPOSE 8000

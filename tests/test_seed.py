@@ -76,6 +76,15 @@ def test_repository_data_file_loads_without_rejections(settings, caplog):
     assert "added 7, unchanged 0, rejected 0" in caplog.text
 
 
+def test_demo_data_file_loads_without_rejections(settings, caplog):
+    caplog.set_level(logging.INFO, logger="app.seed")
+    settings = dataclasses.replace(settings, trips_file=Path(__file__).parent.parent / "data" / "demo-trips.json")
+
+    assert len(day_trip_ids(settings, "2026-10-01")) == 9
+    assert "added 23, unchanged 0, rejected 0" in caplog.text
+    assert day_trip_ids(settings, "2026-10-03") == []  # the empty day
+
+
 def test_bad_records_are_skipped_and_reported(settings, caplog):
     caplog.set_level(logging.INFO, logger="app.seed")
     settings.trips_file.write_text(

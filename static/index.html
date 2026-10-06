@@ -2,165 +2,198 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="day-tz-offset" content="{{DAY_TZ_OFFSET}}">
+<meta name="color-scheme" content="light dark">
 <title>Дневник смен</title>
-<style>
-  :root {
-    --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #6b7280;
-    --line: #e5e7eb; --accent: #2563eb; --error: #b91c1c;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #12151b; --card: #1b1f27; --text: #e6e8ec; --muted: #9aa3b2;
-      --line: #2b313c; --accent: #6ea0ff; --error: #f87171;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  }
-  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
-  h1 { font-size: 22px; margin: 0 0 16px; }
-  h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted); font-weight: 600; }
-  nav { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
-  button, input[type="date"] {
-    font: inherit; color: var(--text); background: var(--card);
-    border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px;
-  }
-  button { cursor: pointer; }
-  button:hover { border-color: var(--accent); }
-  section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-  .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
-  .totals div { display: flex; flex-direction: column; }
-  .totals span { color: var(--muted); font-size: 13px; }
-  .totals strong { font-size: 20px; font-variant-numeric: tabular-nums; }
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-  th, td { text-align: right; padding: 6px 8px; border-top: 1px solid var(--line); white-space: nowrap; }
-  th:first-child, td:first-child { text-align: left; }
-  th { color: var(--muted); font-weight: 600; font-size: 13px; border-top: none; }
-  .note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
-  .empty { color: var(--muted); margin: 0; }
-  .error { color: var(--error); }
-  @media (max-width: 520px) { .totals { grid-template-columns: repeat(2, 1fr); } }
-</style>
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/app.js" defer></script>
 </head>
 <body>
-<main>
-  <h1>Дневник смен</h1>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-offline" viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-road" viewBox="0 0 24 24"><path d="M8 3L4 21M16 3l4 18M12 4v3M12 10.5v3M12 17v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
 
-  <nav>
-    <button id="prev" type="button">← пред. день</button>
-    <input id="date" type="date" aria-label="День">
-    <button id="next" type="button">след. день →</button>
+<header class="topbar">
+  <div class="wrap topbar__row">
+    <span class="brand">Дневник смен</span>
+    <button class="btn btn--primary" id="add-open" type="button">
+      <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+      <span>Поездка</span>
+    </button>
+  </div>
+  <nav class="wrap daybar" aria-label="Выбор дня">
+    <button class="icon-btn" id="prev" type="button" aria-label="Предыдущий день" title="Предыдущий день (←)">
+      <svg class="icon" aria-hidden="true"><use href="#i-left"/></svg>
+    </button>
+    <div class="daybar__center">
+      <h1 class="daybar__title" id="day-title" aria-live="polite">&nbsp;</h1>
+      <div class="daybar__tools">
+        <button class="chip" id="today" type="button">Сегодня</button>
+        <label class="chip chip--date">
+          <span class="sr-only">Выбрать дату</span>
+          <input type="date" id="date-input">
+        </label>
+      </div>
+    </div>
+    <button class="icon-btn" id="next" type="button" aria-label="Следующий день" title="Следующий день (→)">
+      <svg class="icon" aria-hidden="true"><use href="#i-right"/></svg>
+    </button>
   </nav>
+</header>
 
-  <p id="error" class="error" hidden></p>
-
-  <section aria-labelledby="summary-title">
-    <h2 id="summary-title">Сводка за день</h2>
-    <div class="totals">
-      <div><span>Поездок</span><strong id="trips-count">—</strong></div>
-      <div><span>Выручка</span><strong id="revenue">—</strong></div>
-      <div><span>Комиссия</span><strong id="commission">—</strong></div>
-      <div><span>На руки</span><strong id="net">—</strong></div>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Оплата</th><th>Поездок</th><th>Выручка</th><th>Комиссия</th><th>На руки</th></tr></thead>
-        <tbody id="by-payment"></tbody>
-      </table>
-    </div>
-    <p class="note">«На руки» = выручка − комиссия. Строка «Наличные» → «Выручка» — сколько получено наличными.</p>
+<main class="wrap" id="main">
+  <section class="panel state" id="error-state" hidden>
+    <svg class="state__icon" aria-hidden="true"><use href="#i-offline"/></svg>
+    <h2 class="state__title">Не удалось загрузить день</h2>
+    <p class="state__text" id="error-text">Проверьте соединение с сервером.</p>
+    <button class="btn btn--primary" id="retry" type="button">
+      <svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>
+      <span>Повторить</span>
+    </button>
   </section>
 
-  <section aria-labelledby="trips-title">
-    <h2 id="trips-title">Поездки</h2>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Время</th><th>Оплата</th><th>Сумма</th><th>Комиссия</th><th>На руки</th></tr></thead>
-        <tbody id="trips"></tbody>
-      </table>
-    </div>
-    <p id="no-trips" class="empty" hidden>Поездок нет.</p>
-  </section>
+  <div id="content">
+    <section class="panel summary" aria-labelledby="net-label">
+      <p class="eyebrow" id="net-label">На руки</p>
+      <p class="net"><span class="num skel-text" id="net">00 000</span></p>
+
+      <div class="split" id="split">
+        <div class="split__bar" aria-hidden="true">
+          <span class="seg seg--card" id="split-card-bar"></span>
+          <span class="seg seg--cash" id="split-cash-bar"></span>
+        </div>
+        <div class="split__legend">
+          <span class="legend"><span class="swatch swatch--card" aria-hidden="true"></span>Карта <b class="num skel-text" id="split-card">0 000</b></span>
+          <span class="legend"><span class="swatch swatch--cash" aria-hidden="true"></span>Наличные <b class="num skel-text" id="split-cash">0 000</b></span>
+        </div>
+      </div>
+
+      <dl class="metrics">
+        <div><dt>Поездки</dt><dd class="num skel-text" id="m-count">0</dd></div>
+        <div><dt>Выручка</dt><dd class="num skel-text" id="m-revenue">00 000</dd></div>
+        <div><dt>Комиссия</dt><dd class="num skel-text" id="m-commission">0 000</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel" aria-labelledby="timeline-title">
+      <div class="panel__head">
+        <h2 class="panel__title" id="timeline-title">Лента дня</h2>
+        <div class="legend-row" aria-hidden="true">
+          <span class="legend"><span class="swatch swatch--card"></span>Карта</span>
+          <span class="legend"><span class="swatch swatch--cash"></span>Наличные</span>
+        </div>
+      </div>
+      <div class="timeline">
+        <div class="timeline__track" id="track"></div>
+        <div class="timeline__scale" aria-hidden="true">
+          <span style="--at:0">00</span><span class="minor" style="--at:3">03</span>
+          <span style="--at:6">06</span><span class="minor" style="--at:9">09</span>
+          <span style="--at:12">12</span><span class="minor" style="--at:15">15</span>
+          <span style="--at:18">18</span><span class="minor" style="--at:21">21</span>
+          <span style="--at:24">24</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="trips-title">
+      <div class="panel__head">
+        <h2 class="panel__title" id="trips-title">Поездки</h2>
+        <span class="muted num" id="trips-count"></span>
+      </div>
+      <ol class="trips" id="trips"></ol>
+      <div class="state state--inline" id="empty-state" hidden>
+        <svg class="state__icon" aria-hidden="true"><use href="#i-road"/></svg>
+        <p class="state__title">В этот день поездок нет</p>
+        <button class="btn" id="empty-add" type="button">
+          <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+          <span>Добавить поездку</span>
+        </button>
+      </div>
+    </section>
+  </div>
 </main>
 
-<script>
-const PAYMENT = { cash: "Наличные", card: "Карта" };
-const $ = (id) => document.getElementById(id);
-const number = (value) => value.toLocaleString("ru-RU");
+<dialog class="sheet" id="add-dialog" aria-labelledby="add-title">
+  <form id="add-form" novalidate>
+    <div class="sheet__head">
+      <h2 class="sheet__title" id="add-title">Новая поездка</h2>
+      <button class="icon-btn" type="button" data-close aria-label="Закрыть">
+        <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
 
-// Dates are "YYYY-MM-DD" strings; shift them in UTC so the browser time zone does not matter.
-function shiftDay(day, delta) {
-  const [y, m, d] = day.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d + delta)).toISOString().slice(0, 10);
-}
+    <div class="form-error" id="form-error" role="alert" hidden></div>
 
-// The server already returns times in the driver's offset, so the string itself is local time.
-function timeRange(trip, day) {
-  const end = trip.end.slice(11, 16) + (trip.end.slice(0, 10) !== day ? " (след. день)" : "");
-  return `${trip.start.slice(11, 16)}–${end}`;
-}
+    <div class="field">
+      <label for="f-date">Дата</label>
+      <input id="f-date" name="date" type="date" aria-describedby="e-date">
+      <p class="field__error" id="e-date"></p>
+    </div>
 
-function row(cells) {
-  const tr = document.createElement("tr");
-  for (const text of cells) {
-    const td = document.createElement("td");
-    td.textContent = text;
-    tr.append(td);
-  }
-  return tr;
-}
+    <div class="field-row">
+      <div class="field">
+        <label for="f-start">Начало</label>
+        <input id="f-start" name="start" type="time" aria-describedby="e-start">
+        <p class="field__error" id="e-start"></p>
+      </div>
+      <div class="field">
+        <label for="f-end">Окончание</label>
+        <input id="f-end" name="end" type="time" aria-describedby="e-end h-end">
+        <p class="field__error" id="e-end"></p>
+      </div>
+    </div>
+    <p class="field__hint" id="h-end" hidden></p>
 
-function render(data) {
-  const s = data.summary;
-  $("date").value = data.date;
-  $("trips-count").textContent = number(s.trips_count);
-  $("revenue").textContent = number(s.revenue);
-  $("commission").textContent = number(s.commission);
-  $("net").textContent = number(s.net);
+    <div class="field-row">
+      <div class="field">
+        <label for="f-amount">Сумма</label>
+        <input id="f-amount" name="amount" inputmode="numeric" autocomplete="off" aria-describedby="e-amount">
+        <p class="field__error" id="e-amount"></p>
+      </div>
+      <div class="field">
+        <label for="f-commission">Комиссия</label>
+        <input id="f-commission" name="commission" inputmode="numeric" autocomplete="off" aria-describedby="e-commission">
+        <p class="field__error" id="e-commission"></p>
+      </div>
+    </div>
 
-  $("by-payment").replaceChildren(
-    ...["cash", "card"].map((key) => {
-      const t = s.by_payment[key];
-      return row([PAYMENT[key], number(t.trips_count), number(t.revenue), number(t.commission), number(t.net)]);
-    })
-  );
+    <fieldset class="field">
+      <legend>Оплата</legend>
+      <div class="segmented">
+        <label><input type="radio" name="payment" value="card" checked><span><span class="swatch swatch--card" aria-hidden="true"></span>Карта</span></label>
+        <label><input type="radio" name="payment" value="cash"><span><span class="swatch swatch--cash" aria-hidden="true"></span>Наличные</span></label>
+      </div>
+      <p class="field__error" id="e-payment"></p>
+    </fieldset>
 
-  $("trips").replaceChildren(
-    ...data.trips.map((trip) =>
-      row([timeRange(trip, data.date), PAYMENT[trip.payment], number(trip.amount),
-           number(trip.commission), number(trip.amount - trip.commission)])
-    )
-  );
-  $("no-trips").hidden = data.trips.length > 0;
-}
+    <div class="field">
+      <label for="f-id">ID поездки</label>
+      <div class="input-with-btn">
+        <input id="f-id" name="id" autocomplete="off" spellcheck="false" aria-describedby="e-id h-id">
+        <button class="icon-btn" type="button" id="new-id" aria-label="Сгенерировать новый ID" title="Новый ID">
+          <svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>
+        </button>
+      </div>
+      <p class="field__error" id="e-id"></p>
+      <p class="field__hint" id="h-id">Повторная отправка с тем же ID не создаёт дубль.</p>
+    </div>
 
-async function load(day, { push = false } = {}) {
-  $("error").hidden = true;
-  try {
-    const response = await fetch(`/api/days/${day}`);
-    if (!response.ok) throw new Error(`сервер ответил ${response.status}`);
-    const data = await response.json();
-    render(data);
-    const url = `?date=${data.date}`;
-    if (push) history.pushState(null, "", url);
-    else history.replaceState(null, "", url);
-  } catch (error) {
-    $("error").textContent = `Не удалось загрузить день: ${error.message}`;
-    $("error").hidden = false;
-  }
-}
+    <div class="sheet__actions">
+      <button class="btn" type="button" data-close>Отмена</button>
+      <button class="btn btn--primary" type="submit" id="add-submit">Сохранить</button>
+    </div>
+  </form>
+</dialog>
 
-$("prev").addEventListener("click", () => load(shiftDay($("date").value, -1), { push: true }));
-$("next").addEventListener("click", () => load(shiftDay($("date").value, 1), { push: true }));
-$("date").addEventListener("change", () => { if ($("date").value) load($("date").value, { push: true }); });
-window.addEventListener("popstate", () => load(new URLSearchParams(location.search).get("date") || "today"));
-
-load(new URLSearchParams(location.search).get("date") || "today");
-</script>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>

@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from app import db, seed
 from app.config import Settings, load_settings
@@ -74,9 +75,14 @@ def create_app(settings: Settings | None = None, now: Callable[[], datetime] = _
             trips=[_in_tz(trip, settings.day_tz) for trip in trips],
         )
 
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
     @app.get("/", include_in_schema=False)
-    def client_page() -> FileResponse:
-        return FileResponse(STATIC_DIR / "index.html")
+    def client_page(settings: SettingsDep) -> HTMLResponse:
+        # The client needs the day offset to build trip times; "+05:00" is the tail of an ISO time.
+        offset = datetime.now(settings.day_tz).isoformat()[-6:]
+        page = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+        return HTMLResponse(page.replace("{{DAY_TZ_OFFSET}}", offset))
 
     return app
 

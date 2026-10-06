@@ -128,11 +128,12 @@ button, input { font: inherit; color: inherit; }
   padding-bottom: 12px;
 }
 .daybar__center { flex: 1; min-width: 0; text-align: center; }
+.daybar__weekday { color: var(--muted); font-size: 13px; font-weight: 600; min-height: 19px; }
+.daybar__weekday::first-letter { text-transform: uppercase; }
 .daybar__title {
-  font-size: 19px; font-weight: 650; letter-spacing: -0.01em;
+  font-size: 20px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.daybar__title::first-letter { text-transform: uppercase; }
 .daybar__tools { display: flex; justify-content: center; gap: 8px; margin-top: 6px; }
 
 /* Panels -------------------------------------------------------------- */
@@ -319,7 +320,7 @@ main { padding-top: 16px; padding-bottom: calc(32px + env(safe-area-inset-bottom
 .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
 .segmented label { position: relative; }
 .segmented input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.segmented span {
+.segmented label > span {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 38px; border-radius: 8px; font-weight: 600; color: var(--muted);
 }
@@ -336,7 +337,7 @@ main { padding-top: 16px; padding-bottom: calc(32px + env(safe-area-inset-bottom
 .toast {
   position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 20;
   transform: translateX(-50%);
-  max-width: calc(100% - 32px);
+  width: max-content; max-width: calc(100% - 32px);
   padding: 10px 16px; border-radius: 12px;
   background: var(--text); color: var(--surface);
   font-weight: 600; font-size: 14px;

@@ -35,7 +35,10 @@
       <svg class="icon" aria-hidden="true"><use href="#i-left"/></svg>
     </button>
     <div class="daybar__center">
-      <h1 class="daybar__title" id="day-title" aria-live="polite">&nbsp;</h1>
+      <div aria-live="polite">
+        <p class="daybar__weekday" id="day-weekday">&nbsp;</p>
+        <h1 class="daybar__title" id="day-title">&nbsp;</h1>
+      </div>
       <div class="daybar__tools">
         <button class="chip" id="today" type="button">Сегодня</button>
         <label class="chip chip--date">

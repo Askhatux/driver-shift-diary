@@ -10,9 +10,8 @@ const MINUTES_IN_DAY = 24 * 60;
 const $ = (id) => document.getElementById(id);
 const numberFormat = new Intl.NumberFormat("ru-RU");
 const money = (value) => numberFormat.format(value);
-const dayFormat = new Intl.DateTimeFormat("ru-RU", {
-  weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC",
-});
+const dateFormat = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const weekdayFormat = new Intl.DateTimeFormat("ru-RU", { weekday: "long", timeZone: "UTC" });
 
 const state = {
   day: null,        // "YYYY-MM-DD" currently shown
@@ -35,8 +34,9 @@ function shiftDay(day, delta) {
   return date.toISOString().slice(0, 10);
 }
 
+// "4 октября 2026" (without the trailing " г.").
 function dayTitle(day) {
-  return dayFormat.format(utcDate(day)).replace(" г.", "");
+  return dateFormat.format(utcDate(day)).replace(/\s?г\.$/, "");
 }
 
 const clock = (iso) => iso.slice(11, 16);
@@ -63,7 +63,7 @@ async function load(target, { push = false } = {}) {
   const skeletonTimer = setTimeout(showSkeleton, 120);
   try {
     const response = await fetch(`/api/days/${target}`, { signal: controller.signal });
-    if (!response.ok) throw new Error(`Сервер ответил ${response.status}.`);
+    if (!response.ok) throw new Error(`Сервер ответил ошибкой ${response.status}. Попробуйте ещё раз.`);
     const data = await response.json();
     if (target === "today") state.today = data.date;
     render(data);
@@ -72,7 +72,9 @@ async function load(target, { push = false } = {}) {
     else history.replaceState({ date: data.date }, "", url);
   } catch (error) {
     if (error.name === "AbortError") return;
-    showError(error instanceof TypeError ? "Нет соединения с сервером." : error.message);
+    showError(
+      error instanceof TypeError ? "Нет соединения с сервером. Проверьте сеть и попробуйте ещё раз." : error.message
+    );
   } finally {
     clearTimeout(skeletonTimer);
     if (state.controller === controller) $("main").classList.remove("is-loading");
@@ -98,7 +100,7 @@ function showSkeleton() {
 function showError(message) {
   $("main").classList.remove("is-loading");
   $("content").hidden = true;
-  $("error-text").textContent = `${message} Проверьте соединение и попробуйте ещё раз.`;
+  $("error-text").textContent = message;
   $("error-state").hidden = false;
   $("retry").focus();
 }
@@ -110,6 +112,8 @@ function render(data) {
   $("error-state").hidden = true;
   $("content").hidden = false;
 
+  const weekday = weekdayFormat.format(utcDate(data.date));
+  $("day-weekday").textContent = state.today === data.date ? `${weekday}, сегодня` : weekday;
   $("day-title").textContent = dayTitle(data.date);
   document.title = `${dayTitle(data.date)} — Дневник смен`;
   $("date-input").value = data.date;
@@ -261,7 +265,8 @@ window.addEventListener("popstate", () => load(new URLSearchParams(location.sear
 
 document.addEventListener("keydown", (event) => {
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-  if ($("add-dialog").open || event.target.closest("input, textarea, select")) return;
+  const target = event.target instanceof Element ? event.target : document.body;
+  if ($("add-dialog").open || target.closest("input, textarea, select, dialog")) return;
   if (!state.day) return;
   if (event.key === "ArrowLeft") go(shiftDay(state.day, -1));
   if (event.key === "ArrowRight") go(shiftDay(state.day, 1));
@@ -336,7 +341,7 @@ function updateEndHint() {
   const hint = $("h-end");
   if (endsNextDay() && $("f-date").value) {
     const next = shiftDay($("f-date").value, 1);
-    hint.textContent = `Окончание на следующий день — ${dayTitle(next).split(", ")[1]}.`;
+    hint.textContent = `Окончание на следующий день — ${dayTitle(next)}.`;
     hint.hidden = false;
   } else {
     hint.hidden = true;
@@ -389,6 +394,9 @@ $("new-id").addEventListener("click", () => ($("f-id").value = newId()));
 for (const id of ["f-start", "f-end", "f-date"]) $(id).addEventListener("input", updateEndHint);
 dialog.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => dialog.close()));
 dialog.addEventListener("click", (event) => event.target === dialog && dialog.close());
+// Return focus to the page, otherwise it may stay in a field of the closed dialog and the
+// arrow keys would not flip days.
+dialog.addEventListener("close", () => $("add-open").focus());
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();

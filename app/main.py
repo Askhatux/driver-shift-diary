@@ -1,5 +1,6 @@
 """FastAPI application: routes and startup."""
 
+import logging
 import sqlite3
 from collections.abc import Callable, Iterator
 from contextlib import asynccontextmanager, closing
@@ -72,4 +73,6 @@ def create_app(settings: Settings | None = None, now: Callable[[], datetime] = _
     return app
 
 
+# Uvicorn configures only its own loggers; this makes app.* messages (the seed report) visible.
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s: %(message)s")
 app = create_app()

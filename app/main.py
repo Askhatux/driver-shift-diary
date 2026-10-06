@@ -2,13 +2,13 @@
 
 import sqlite3
 from collections.abc import Callable, Iterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, closing
 from datetime import datetime, time, timedelta, timezone
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 
-from app import db
+from app import db, seed
 from app.config import Settings, load_settings
 from app.models import Day, DayParam, Trip
 from app.summary import summarize
@@ -28,6 +28,8 @@ def create_app(settings: Settings | None = None, now: Callable[[], datetime] = _
         # Settings are read at startup, not at import, so a bad value stops the server here.
         app.state.settings = settings or load_settings()
         db.init_db(app.state.settings.db_path)
+        with closing(db.connect(app.state.settings.db_path)) as conn:
+            seed.load_trips_file(conn, app.state.settings.trips_file)
         yield
 
     app = FastAPI(title="Driver shift diary", lifespan=lifespan)

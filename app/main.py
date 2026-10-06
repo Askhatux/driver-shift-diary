@@ -5,14 +5,18 @@ import sqlite3
 from collections.abc import Callable, Iterator
 from contextlib import asynccontextmanager, closing
 from datetime import datetime, time, timedelta, timezone
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi.responses import FileResponse
 
 from app import db, seed
 from app.config import Settings, load_settings
 from app.models import Day, DayParam, Trip
 from app.summary import summarize
+
+STATIC_DIR = Path(__file__).parent.parent / "static"
 
 
 def _in_tz(trip: Trip, tz: timezone) -> Trip:
@@ -69,6 +73,10 @@ def create_app(settings: Settings | None = None, now: Callable[[], datetime] = _
             summary=summarize(trips),
             trips=[_in_tz(trip, settings.day_tz) for trip in trips],
         )
+
+    @app.get("/", include_in_schema=False)
+    def client_page() -> FileResponse:
+        return FileResponse(STATIC_DIR / "index.html")
 
     return app
 

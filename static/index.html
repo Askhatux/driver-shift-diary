@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Дневник смен</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #6b7280;
+    --line: #e5e7eb; --accent: #2563eb; --error: #b91c1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --card: #1b1f27; --text: #e6e8ec; --muted: #9aa3b2;
+      --line: #2b313c; --accent: #6ea0ff; --error: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 16px; }
+  h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted); font-weight: 600; }
+  nav { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  button, input[type="date"] {
+    font: inherit; color: var(--text); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px;
+  }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+  .totals div { display: flex; flex-direction: column; }
+  .totals span { color: var(--muted); font-size: 13px; }
+  .totals strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 6px 8px; border-top: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; border-top: none; }
+  .note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+  .empty { color: var(--muted); margin: 0; }
+  .error { color: var(--error); }
+  @media (max-width: 520px) { .totals { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Дневник смен</h1>
+
+  <nav>
+    <button id="prev" type="button">← пред. день</button>
+    <input id="date" type="date" aria-label="День">
+    <button id="next" type="button">след. день →</button>
+  </nav>
+
+  <p id="error" class="error" hidden></p>
+
+  <section aria-labelledby="summary-title">
+    <h2 id="summary-title">Сводка за день</h2>
+    <div class="totals">
+      <div><span>Поездок</span><strong id="trips-count">—</strong></div>
+      <div><span>Выручка</span><strong id="revenue">—</strong></div>
+      <div><span>Комиссия</span><strong id="commission">—</strong></div>
+      <div><span>На руки</span><strong id="net">—</strong></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Оплата</th><th>Поездок</th><th>Выручка</th><th>Комиссия</th><th>На руки</th></tr></thead>
+        <tbody id="by-payment"></tbody>
+      </table>
+    </div>
+    <p class="note">«На руки» = выручка − комиссия. Строка «Наличные» → «Выручка» — сколько получено наличными.</p>
+  </section>
+
+  <section aria-labelledby="trips-title">
+    <h2 id="trips-title">Поездки</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Время</th><th>Оплата</th><th>Сумма</th><th>Комиссия</th><th>На руки</th></tr></thead>
+        <tbody id="trips"></tbody>
+      </table>
+    </div>
+    <p id="no-trips" class="empty" hidden>Поездок нет.</p>
+  </section>
+</main>
+
+<script>
+const PAYMENT = { cash: "Наличные", card: "Карта" };
+const $ = (id) => document.getElementById(id);
+const number = (value) => value.toLocaleString("ru-RU");
+
+// Dates are "YYYY-MM-DD" strings; shift them in UTC so the browser time zone does not matter.
+function shiftDay(day, delta) {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + delta)).toISOString().slice(0, 10);
+}
+
+// The server already returns times in the driver's offset, so the string itself is local time.
+function timeRange(trip, day) {
+  const end = trip.end.slice(11, 16) + (trip.end.slice(0, 10) !== day ? " (след. день)" : "");
+  return `${trip.start.slice(11, 16)}–${end}`;
+}
+
+function row(cells) {
+  const tr = document.createElement("tr");
+  for (const text of cells) {
+    const td = document.createElement("td");
+    td.textContent = text;
+    tr.append(td);
+  }
+  return tr;
+}
+
+function render(data) {
+  const s = data.summary;
+  $("date").value = data.date;
+  $("trips-count").textContent = number(s.trips_count);
+  $("revenue").textContent = number(s.revenue);
+  $("commission").textContent = number(s.commission);
+  $("net").textContent = number(s.net);
+
+  $("by-payment").replaceChildren(
+    ...["cash", "card"].map((key) => {
+      const t = s.by_payment[key];
+      return row([PAYMENT[key], number(t.trips_count), number(t.revenue), number(t.commission), number(t.net)]);
+    })
+  );
+
+  $("trips").replaceChildren(
+    ...data.trips.map((trip) =>
+      row([timeRange(trip, data.date), PAYMENT[trip.payment], number(trip.amount),
+           number(trip.commission), number(trip.amount - trip.commission)])
+    )
+  );
+  $("no-trips").hidden = data.trips.length > 0;
+}
+
+async function load(day, { push = false } = {}) {
+  $("error").hidden = true;
+  try {
+    const response = await fetch(`/api/days/${day}`);
+    if (!response.ok) throw new Error(`сервер ответил ${response.status}`);
+    const data = await response.json();
+    render(data);
+    const url = `?date=${data.date}`;
+    if (push) history.pushState(null, "", url);
+    else history.replaceState(null, "", url);
+  } catch (error) {
+    $("error").textContent = `Не удалось загрузить день: ${error.message}`;
+    $("error").hidden = false;
+  }
+}
+
+$("prev").addEventListener("click", () => load(shiftDay($("date").value, -1), { push: true }));
+$("next").addEventListener("click", () => load(shiftDay($("date").value, 1), { push: true }));
+$("date").addEventListener("change", () => { if ($("date").value) load($("date").value, { push: true }); });
+window.addEventListener("popstate", () => load(new URLSearchParams(location.search).get("date") || "today"));
+
+load(new URLSearchParams(location.search).get("date") || "today");
+</script>
+</body>
+</html>

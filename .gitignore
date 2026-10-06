@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+data/*.db
+
+# Agent skills (local tooling, not part of the project)
+.agents/
+.claude/
+skills-lock.json

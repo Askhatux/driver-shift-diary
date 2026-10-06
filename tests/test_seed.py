@@ -1,5 +1,7 @@
+import dataclasses
 import json
 import logging
+from pathlib import Path
 
 import pytest
 
@@ -64,6 +66,14 @@ def test_loading_file_twice_does_not_duplicate(settings, caplog):
 
     assert day_trip_ids(settings) == ["t1", "t2"]  # second start, same database
     assert "added 0, unchanged 2, rejected 0" in caplog.text
+
+
+def test_repository_data_file_loads_without_rejections(settings, caplog):
+    caplog.set_level(logging.INFO, logger="app.seed")
+    settings = dataclasses.replace(settings, trips_file=Path(__file__).parent.parent / "data" / "trips.json")
+
+    assert day_trip_ids(settings, "2026-10-01") == ["t1", "t2", "t3", "t4"]
+    assert "added 7, unchanged 0, rejected 0" in caplog.text
 
 
 def test_bad_records_are_skipped_and_reported(settings, caplog):

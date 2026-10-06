@@ -7,3 +7,6 @@ data/*.db
 .agents/
 .claude/
 skills-lock.json
+
+# Log of AI mistakes (kept locally)
+NOTES-AI.md

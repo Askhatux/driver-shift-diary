@@ -28,3 +28,17 @@
 - **Клиент:** сводка, список, кнопки пред./след. день, выбор даты, дата в URL. Без `?date=` запрашивает `/api/days/today`. Формы добавления нет.
 - **Тесты:** через HTTP (`TestClient`, временная SQLite) + unit-тест сводки. Гонку дублей проверяем детерминированно (запись вставлена в БД заранее). Полный список — `docs/PLAN.md`.
 - **Язык:** UI, README, план — русский; ошибки API, код, комментарии, коммиты — английский.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`Askhatux/arqa`), managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.

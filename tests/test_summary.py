@@ -31,3 +31,9 @@ def test_summary_of_task_example():
             "card": {"trips_count": 1, "revenue": 2400, "commission": 360, "net": 2040},
         },
     }
+
+
+def test_summary_of_empty_day_is_zeros():
+    zeros = {"trips_count": 0, "revenue": 0, "commission": 0, "net": 0}
+
+    assert summarize([]).model_dump() == {**zeros, "by_payment": {"cash": zeros, "card": zeros}}

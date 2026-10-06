@@ -23,7 +23,8 @@ COLUMNS = "id, start_utc, end_utc, amount, payment, commission"
 
 
 def connect(path: Path) -> sqlite3.Connection:
-    return sqlite3.connect(path)
+    # One connection per request, but FastAPI may open it and use it in different pool threads.
+    return sqlite3.connect(path, check_same_thread=False)
 
 
 def init_db(path: Path) -> None:

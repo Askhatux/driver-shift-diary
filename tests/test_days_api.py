@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
@@ -83,6 +84,13 @@ def test_trips_are_sorted_by_start_then_id(client):
     post_trip(client, "a", "2026-10-01T09:00:00+05:00", "2026-10-01T09:20:00+05:00")
 
     assert trip_ids(client, "2026-10-01") == ["a", "b", "later"]
+
+
+def test_parallel_requests_do_not_fail(client):
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        codes = list(pool.map(lambda n: client.get(f"/api/days/2026-10-{n % 9 + 1:02d}").status_code, range(40)))
+
+    assert codes == [200] * 40
 
 
 def test_today_is_current_date_in_configured_offset(settings):

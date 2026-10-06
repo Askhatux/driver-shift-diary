@@ -1,4 +1,5 @@
 import json
+import logging
 
 from fastapi.testclient import TestClient
 
@@ -32,3 +33,16 @@ def test_trips_file_is_loaded_at_startup(settings):
     settings.trips_file.write_text(json.dumps([T1, T2]))
 
     assert day_trip_ids(settings) == ["t1", "t2"]
+
+
+def test_bad_records_are_skipped_and_reported(settings, caplog):
+    caplog.set_level(logging.INFO, logger="app.seed")
+    settings.trips_file.write_text(
+        json.dumps([T1, {**T2, "amount": 0}, {**T1, "amount": 9999}, "not a trip"])
+    )
+
+    assert day_trip_ids(settings) == ["t1"]
+    assert "added 1, unchanged 0, rejected 3" in caplog.text
+    assert "t2: amount: Input should be greater than 0" in caplog.text
+    assert "trip t1 already exists with different data" in caplog.text
+    assert "#4:" in caplog.text

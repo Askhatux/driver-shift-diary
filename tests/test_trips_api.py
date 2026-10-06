@@ -25,6 +25,18 @@ def test_repeated_trip_is_not_duplicated(client):
     assert [trip["id"] for trip in day["trips"]] == ["t1"]
 
 
+def test_same_moment_in_other_offset_is_a_repeat(client):
+    client.post("/api/trips", json=T1)
+
+    response = client.post(
+        "/api/trips",
+        json={**T1, "start": "2026-10-01T06:10:00+03:00", "end": "2026-10-01T06:32:00+03:00"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == T1
+
+
 def test_same_id_with_different_data_is_rejected(client):
     client.post("/api/trips", json=T1)
 

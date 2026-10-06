@@ -26,6 +26,11 @@ def test_commission_bounds_are_inclusive(client, commission):
         pytest.param({"end": "2026-10-01T08:00:00+05:00"}, "end must be later than start", id="end before start"),
         pytest.param({"commission": -1}, None, id="commission negative"),
         pytest.param({"commission": 2401}, "commission must not exceed amount", id="commission above amount"),
+        pytest.param({"amount": 2400.0}, None, id="amount float"),
+        pytest.param({"amount": "2400"}, None, id="amount string"),
+        pytest.param({"amount": True}, None, id="amount bool"),
+        pytest.param({"commission": "360"}, None, id="commission string"),
+        pytest.param({"amount": 2**63, "commission": 0}, None, id="amount above int64"),
     ],
 )
 def test_invalid_trip_is_rejected(client, patch, message):

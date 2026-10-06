@@ -3,16 +3,18 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, StrictInt, model_validator
+
+INT64_MAX = 2**63 - 1  # largest INTEGER SQLite can store
 
 
 class Trip(BaseModel):
     id: str
     start: datetime
     end: datetime
-    amount: int = Field(gt=0)
+    amount: StrictInt = Field(gt=0, le=INT64_MAX)
     payment: Literal["cash", "card"]
-    commission: int = Field(ge=0)
+    commission: StrictInt = Field(ge=0, le=INT64_MAX)
 
     @model_validator(mode="after")
     def _check_trip(self) -> "Trip":

@@ -1,6 +1,6 @@
 """API models: trip and daily summary."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -29,3 +29,9 @@ class ByPayment(BaseModel):
 
 class DaySummary(Totals):
     by_payment: ByPayment
+
+
+class Day(BaseModel):
+    date: date
+    summary: DaySummary
+    trips: list[Trip]

@@ -13,3 +13,13 @@ def test_new_trip_is_created(client):
 
     assert response.status_code == 201
     assert response.json() == T1
+
+
+def test_repeated_trip_is_not_duplicated(client):
+    first = client.post("/api/trips", json=T1)
+    second = client.post("/api/trips", json=T1)
+
+    assert (first.status_code, second.status_code) == (201, 200)
+    assert second.json() == T1
+    day = client.get("/api/days/2026-10-01").json()
+    assert [trip["id"] for trip in day["trips"]] == ["t1"]

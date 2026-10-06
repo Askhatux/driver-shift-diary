@@ -1,17 +1,33 @@
 """API models: trip and daily summary."""
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, StrictInt, model_validator
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, StrictInt, model_validator
 
 INT64_MAX = 2**63 - 1  # largest INTEGER SQLite can store
 
 
+def _require_string(value: object) -> object:
+    # Pydantic would otherwise read a number as a unix timestamp.
+    if not isinstance(value, (str, datetime)):
+        raise ValueError("must be an ISO 8601 string")
+    return value
+
+
+def _require_offset(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        raise ValueError("timezone offset required, e.g. 2026-10-01T08:10:00+05:00")
+    return value
+
+
+Moment = Annotated[datetime, BeforeValidator(_require_string), AfterValidator(_require_offset)]
+
+
 class Trip(BaseModel):
     id: str
-    start: datetime
-    end: datetime
+    start: Moment
+    end: Moment
     amount: StrictInt = Field(gt=0, le=INT64_MAX)
     payment: Literal["cash", "card"]
     commission: StrictInt = Field(ge=0, le=INT64_MAX)

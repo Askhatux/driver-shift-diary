@@ -33,6 +33,10 @@ def test_commission_bounds_are_inclusive(client, commission):
         pytest.param({"amount": 2**63, "commission": 0}, None, id="amount above int64"),
         pytest.param({"payment": "Cash"}, None, id="payment wrong case"),
         pytest.param({"payment": "crypto"}, None, id="payment unknown"),
+        pytest.param({"start": "2026-10-01T08:10:00"}, "timezone offset required", id="start without offset"),
+        pytest.param({"end": "2026-10-01T08:32:00"}, "timezone offset required", id="end without offset"),
+        pytest.param({"start": 1759288200, "end": 1759289520}, None, id="unix timestamps"),
+        pytest.param({"start": "yesterday"}, None, id="start not a date"),
     ],
 )
 def test_invalid_trip_is_rejected(client, patch, message):

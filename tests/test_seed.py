@@ -1,6 +1,8 @@
 import json
 import logging
 
+import pytest
+
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -33,6 +35,24 @@ def test_trips_file_is_loaded_at_startup(settings):
     settings.trips_file.write_text(json.dumps([T1, T2]))
 
     assert day_trip_ids(settings) == ["t1", "t2"]
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (None, "not found"),
+        ('[{"id": "t1",', "cannot read"),
+        ('{"id": "t1"}', "must contain a JSON array"),
+    ],
+    ids=["missing", "broken json", "not an array"],
+)
+def test_unusable_file_is_logged_and_server_starts_empty(settings, caplog, content, message):
+    caplog.set_level(logging.INFO, logger="app.seed")
+    if content is not None:
+        settings.trips_file.write_text(content)
+
+    assert day_trip_ids(settings) == []
+    assert message in caplog.text
 
 
 def test_loading_file_twice_does_not_duplicate(settings, caplog):

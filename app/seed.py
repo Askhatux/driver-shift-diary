@@ -28,9 +28,18 @@ def _reason(error: ValidationError) -> str:
 def load_trips_file(conn: sqlite3.Connection, path: Path) -> None:
     """Save every valid trip; skip bad ones and log a one-line report."""
     if not path.exists():
+        logger.warning("trips file %s not found, starting without it", path)
+        return
+    try:
+        records = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        logger.error("cannot read trips file %s: %s", path, error)
+        return
+    if not isinstance(records, list):
+        logger.error("trips file %s must contain a JSON array", path)
         return
     added, unchanged, rejected = 0, 0, []
-    for number, record in enumerate(json.loads(path.read_text(encoding="utf-8")), start=1):
+    for number, record in enumerate(records, start=1):
         try:
             _, created = db.save_trip(conn, Trip.model_validate(record))
         except ValidationError as error:

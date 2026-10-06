@@ -8,6 +8,7 @@ VALID = {
     "payment": "card",
     "commission": 360,
 }
+MISSING = object()  # patch value that removes the field from the body
 
 
 @pytest.mark.parametrize("commission", [0, 2400], ids=["zero", "equal to amount"])
@@ -37,10 +38,18 @@ def test_commission_bounds_are_inclusive(client, commission):
         pytest.param({"end": "2026-10-01T08:32:00"}, "timezone offset required", id="end without offset"),
         pytest.param({"start": 1759288200, "end": 1759289520}, None, id="unix timestamps"),
         pytest.param({"start": "yesterday"}, None, id="start not a date"),
+        pytest.param({"note": "airport"}, "unknown field: note", id="extra field"),
+        pytest.param({"comission": 360}, "unknown field: comission", id="misspelled field"),
+        pytest.param({"amount": None}, None, id="amount null"),
+        pytest.param({"id": None}, None, id="id null"),
+        pytest.param({"payment": MISSING}, None, id="payment missing"),
+        pytest.param({"start": MISSING}, None, id="start missing"),
     ],
 )
 def test_invalid_trip_is_rejected(client, patch, message):
-    response = client.post("/api/trips", json={**VALID, **patch})
+    body = {key: value for key, value in {**VALID, **patch}.items() if value is not MISSING}
+
+    response = client.post("/api/trips", json=body)
 
     assert response.status_code == 422, response.text
     if message is not None:

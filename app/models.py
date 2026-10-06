@@ -32,6 +32,15 @@ class Trip(BaseModel):
     payment: Literal["cash", "card"]
     commission: StrictInt = Field(ge=0, le=INT64_MAX)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_unknown_fields(cls, data: object) -> object:
+        if isinstance(data, dict):
+            unknown = sorted(set(data) - set(cls.model_fields))
+            if unknown:
+                raise ValueError(f"unknown field: {', '.join(unknown)}")
+        return data
+
     @model_validator(mode="after")
     def _check_trip(self) -> "Trip":
         if self.end <= self.start:

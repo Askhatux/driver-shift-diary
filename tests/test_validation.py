@@ -15,6 +15,8 @@ VALID = {
     [
         pytest.param({"amount": 0}, None, id="amount zero"),
         pytest.param({"amount": -100}, None, id="amount negative"),
+        pytest.param({"end": VALID["start"]}, "end must be later than start", id="end equals start"),
+        pytest.param({"end": "2026-10-01T08:00:00+05:00"}, "end must be later than start", id="end before start"),
     ],
 )
 def test_invalid_trip_is_rejected(client, patch, message):

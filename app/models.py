@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class Trip(BaseModel):
@@ -13,6 +13,12 @@ class Trip(BaseModel):
     amount: int = Field(gt=0)
     payment: Literal["cash", "card"]
     commission: int
+
+    @model_validator(mode="after")
+    def _check_trip(self) -> "Trip":
+        if self.end <= self.start:
+            raise ValueError("end must be later than start")
+        return self
 
 
 class Totals(BaseModel):

@@ -48,8 +48,15 @@ def _from_row(row: tuple) -> Trip:
     )
 
 
+class TripConflict(Exception):
+    """A trip with this id exists and has different data."""
+
+
 def save_trip(conn: sqlite3.Connection, trip: Trip) -> tuple[Trip, bool]:
-    """Insert the trip; if its id already exists, return the stored one. Returns (trip, created)."""
+    """Insert the trip; an exact repeat returns the stored one. Returns (trip, created).
+
+    Raises TripConflict if the id exists with different data.
+    """
     row = (
         trip.id,
         to_utc_text(trip.start),
@@ -62,8 +69,13 @@ def save_trip(conn: sqlite3.Connection, trip: Trip) -> tuple[Trip, bool]:
         with conn:
             conn.execute(f"INSERT INTO trips ({COLUMNS}) VALUES (?, ?, ?, ?, ?, ?)", row)
     except sqlite3.IntegrityError:
-        stored = conn.execute(f"SELECT {COLUMNS} FROM trips WHERE id = ?", (trip.id,)).fetchone()
-        return _from_row(stored), False
+        stored = _from_row(
+            conn.execute(f"SELECT {COLUMNS} FROM trips WHERE id = ?", (trip.id,)).fetchone()
+        )
+        # Aware datetimes compare as moments, so 08:10+05:00 equals 03:10Z.
+        if stored != trip:
+            raise TripConflict(f"trip {trip.id} already exists with different data")
+        return stored, False
     return trip, True
 
 

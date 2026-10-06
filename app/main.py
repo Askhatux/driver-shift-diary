@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 
 from app import db
 from app.config import Settings, load_settings
@@ -43,7 +43,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/api/trips", status_code=201)
     def add_trip(trip: Trip, response: Response, settings: SettingsDep, conn: ConnDep) -> Trip:
-        saved, created = db.save_trip(conn, trip)
+        try:
+            saved, created = db.save_trip(conn, trip)
+        except db.TripConflict as error:
+            raise HTTPException(status_code=409, detail=str(error))
         if not created:
             response.status_code = 200
         return _in_tz(saved, settings.day_tz)

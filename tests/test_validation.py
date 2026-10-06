@@ -31,6 +31,8 @@ def test_commission_bounds_are_inclusive(client, commission):
         pytest.param({"amount": True}, None, id="amount bool"),
         pytest.param({"commission": "360"}, None, id="commission string"),
         pytest.param({"amount": 2**63, "commission": 0}, None, id="amount above int64"),
+        pytest.param({"payment": "Cash"}, None, id="payment wrong case"),
+        pytest.param({"payment": "crypto"}, None, id="payment unknown"),
     ],
 )
 def test_invalid_trip_is_rejected(client, patch, message):

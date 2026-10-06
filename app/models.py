@@ -12,12 +12,14 @@ class Trip(BaseModel):
     end: datetime
     amount: int = Field(gt=0)
     payment: Literal["cash", "card"]
-    commission: int
+    commission: int = Field(ge=0)
 
     @model_validator(mode="after")
     def _check_trip(self) -> "Trip":
         if self.end <= self.start:
             raise ValueError("end must be later than start")
+        if self.commission > self.amount:
+            raise ValueError("commission must not exceed amount")
         return self
 
 

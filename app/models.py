@@ -1,5 +1,6 @@
 """API models: trip and daily summary."""
 
+import re
 from datetime import date, datetime
 from typing import Annotated, Literal
 
@@ -22,6 +23,16 @@ def _require_offset(value: datetime) -> datetime:
 
 
 Moment = Annotated[datetime, BeforeValidator(_require_string), AfterValidator(_require_offset)]
+
+
+def _require_iso_date(value: object) -> object:
+    # Pydantic would otherwise read "1759276800" as a unix timestamp.
+    if isinstance(value, str) and not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
+        raise ValueError("date must look like 2026-10-01")
+    return value
+
+
+DayParam = Annotated[date, BeforeValidator(_require_iso_date)] | Literal["today"]
 
 
 class Trip(BaseModel):

@@ -3,14 +3,14 @@
 import sqlite3
 from collections.abc import Callable, Iterator
 from contextlib import asynccontextmanager
-from datetime import date, datetime, time, timedelta, timezone
-from typing import Annotated, Literal
+from datetime import datetime, time, timedelta, timezone
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 
 from app import db
 from app.config import Settings, load_settings
-from app.models import Day, Trip
+from app.models import Day, DayParam, Trip
 from app.summary import summarize
 
 
@@ -56,7 +56,7 @@ def create_app(settings: Settings | None = None, now: Callable[[], datetime] = _
         return _in_tz(saved, settings.day_tz)
 
     @app.get("/api/days/{day}")
-    def get_day(day: date | Literal["today"], settings: SettingsDep, conn: ConnDep) -> Day:
+    def get_day(day: DayParam, settings: SettingsDep, conn: ConnDep) -> Day:
         if day == "today":
             day = now().astimezone(settings.day_tz).date()
         day_start = datetime.combine(day, time.min, tzinfo=settings.day_tz)

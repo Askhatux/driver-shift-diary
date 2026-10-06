@@ -18,6 +18,27 @@ def test_commission_bounds_are_inclusive(client, commission):
     assert response.status_code == 201, response.text
 
 
+@pytest.mark.parametrize(
+    "raw_body",
+    ['{"id": "t1",', "[]", '"t1"', ""],
+    ids=["broken json", "array", "string", "empty"],
+)
+def test_malformed_body_is_rejected(client, raw_body):
+    response = client.post("/api/trips", content=raw_body, headers={"Content-Type": "application/json"})
+
+    assert response.status_code == 422, response.text
+
+
+@pytest.mark.parametrize(
+    "day",
+    ["2026-13-01", "2026-02-30", "yesterday", "01.10.2026", "1759276800"],
+)
+def test_invalid_date_in_url_is_rejected(client, day):
+    response = client.get(f"/api/days/{day}")
+
+    assert response.status_code == 422, response.text
+
+
 def test_id_of_64_chars_is_accepted(client):
     response = client.post("/api/trips", json={**VALID, "id": "x" * 64})
 

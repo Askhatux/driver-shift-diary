@@ -3,14 +3,14 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Trip(BaseModel):
     id: str
     start: datetime
     end: datetime
-    amount: int
+    amount: int = Field(gt=0)
     payment: Literal["cash", "card"]
     commission: int
 

@@ -1,10 +1,10 @@
 """FastAPI application: routes and startup."""
 
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import asynccontextmanager
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 
@@ -18,7 +18,11 @@ def _in_tz(trip: Trip, tz: timezone) -> Trip:
     return trip.model_copy(update={"start": trip.start.astimezone(tz), "end": trip.end.astimezone(tz)})
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def create_app(settings: Settings | None = None, now: Callable[[], datetime] = _utc_now) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         # Settings are read at startup, not at import, so a bad value stops the server here.
@@ -52,7 +56,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return _in_tz(saved, settings.day_tz)
 
     @app.get("/api/days/{day}")
-    def get_day(day: date, settings: SettingsDep, conn: ConnDep) -> Day:
+    def get_day(day: date | Literal["today"], settings: SettingsDep, conn: ConnDep) -> Day:
+        if day == "today":
+            day = now().astimezone(settings.day_tz).date()
         day_start = datetime.combine(day, time.min, tzinfo=settings.day_tz)
         trips = db.trips_between(conn, day_start, day_start + timedelta(days=1))
         return Day(

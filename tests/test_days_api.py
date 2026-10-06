@@ -1,3 +1,10 @@
+from datetime import datetime, timezone
+
+from fastapi.testclient import TestClient
+
+from app.main import create_app
+
+
 def post_trip(client, id, start, end, amount=1000, payment="cash", commission=100):
     response = client.post(
         "/api/trips",
@@ -76,3 +83,14 @@ def test_trips_are_sorted_by_start_then_id(client):
     post_trip(client, "a", "2026-10-01T09:00:00+05:00", "2026-10-01T09:20:00+05:00")
 
     assert trip_ids(client, "2026-10-01") == ["a", "b", "later"]
+
+
+def test_today_is_current_date_in_configured_offset(settings):
+    def now():
+        return datetime(2026, 10, 1, 21, 0, tzinfo=timezone.utc)  # 2026-10-02 02:00 at +05:00
+
+    with TestClient(create_app(settings, now=now)) as client:
+        response = client.get("/api/days/today")
+
+    assert response.status_code == 200
+    assert response.json()["date"] == "2026-10-02"

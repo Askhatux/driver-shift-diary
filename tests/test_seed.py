@@ -35,6 +35,17 @@ def test_trips_file_is_loaded_at_startup(settings):
     assert day_trip_ids(settings) == ["t1", "t2"]
 
 
+def test_loading_file_twice_does_not_duplicate(settings, caplog):
+    caplog.set_level(logging.INFO, logger="app.seed")
+    settings.trips_file.write_text(json.dumps([T1, T2]))
+
+    day_trip_ids(settings)  # first start
+    caplog.clear()
+
+    assert day_trip_ids(settings) == ["t1", "t2"]  # second start, same database
+    assert "added 0, unchanged 2, rejected 0" in caplog.text
+
+
 def test_bad_records_are_skipped_and_reported(settings, caplog):
     caplog.set_level(logging.INFO, logger="app.seed")
     settings.trips_file.write_text(

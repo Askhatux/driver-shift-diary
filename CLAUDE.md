@@ -10,7 +10,7 @@
 
 ## Решения по проекту
 
-- **Стек:** Python 3.12, FastAPI, SQLite через `sqlite3` без ORM, pytest. Клиент — одна статическая страница без сборщиков, её отдаёт тот же сервер.
+- **Стек:** Python 3.12, FastAPI, SQLite через `sqlite3` без ORM, pytest. Клиент — статические файлы (`static/index.html`, `app.css`, `app.js`) без сборщиков, их отдаёт тот же сервер.
 - **Запуск:** `docker compose up --build` (`python:3.12-slim`) для проверяющего; `uv` для разработки и тестов.
 - **День:** по времени начала поездки в поясе `DAY_TZ_OFFSET` (по умолчанию `+05:00`). Настройка принимает только смещение строго `±HH:MM` (`Z` не принимается), без IANA-зон и `tzdata`.
 - **Настройки:** `DAY_TZ_OFFSET`, `TRIPS_FILE` (по умолчанию `data/trips.json`), `DB_PATH` (по умолчанию `data/trips.db`; для временной БД в тестах и volume в Docker).
@@ -25,21 +25,7 @@
 - **API:** `GET /api/days/{date}` (`YYYY-MM-DD` или `today`) — сводка и поездки одним ответом, сортировка по `start`, затем `id`; пустой день — нули, не 404. `POST /api/trips` — одна поездка.
 - **Файл данных:** загружается при старте (`TRIPS_FILE`) через ту же модель и функцию сохранения, что POST. Плохие записи пропускаются, итог в лог. Нет файла или битый JSON — ошибка в лог, старт с пустой БД.
 - **`data/trips.json`:** пример из задания + свои поездки на нескольких днях, поездка через полночь и поездка в `Z`.
-- **Клиент:** сводка, список, кнопки пред./след. день, выбор даты, дата в URL. Без `?date=` запрашивает `/api/days/today`. Формы добавления нет.
+- **Клиент:** сводка, список, кнопки пред./след. день, выбор даты, дата в URL. Без `?date=` запрашивает `/api/days/today`. Есть форма добавления поездки (этап 3); смещение дня сервер кладёт в `<meta name="day-tz-offset">`.
 - **Тесты:** TDD, тест-первым, мелкие коммиты `тип(область): описание`. Seams: `summarize()` (unit), HTTP через `TestClient` с `create_app(settings, now)`, загрузка файла через старт приложения. Результат проверяем через API, не через БД. Отдельного теста ветки `IntegrityError` нет. Полный список — `docs/PLAN.md`.
 - **NOTES-AI.md** (в `.gitignore`): одна строка на каждую найденную ошибку ИИ — что не так | как нашли | что исправили.
 - **Язык:** UI, README, план — русский; ошибки API, код, комментарии, коммиты — английский.
-
-## Agent skills
-
-### Issue tracker
-
-Issues live in GitHub Issues (`Askhatux/arqa`), managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.

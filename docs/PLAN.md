@@ -4,7 +4,7 @@
 
 - Python 3.12, FastAPI, Pydantic v2, SQLite через стандартный `sqlite3` (без ORM).
 - pytest + FastAPI `TestClient`.
-- Клиент: одна статическая страница `static/index.html` (HTML + JS без сборщика), её отдаёт тот же сервер.
+- Клиент: статические файлы `static/index.html`, `app.css`, `app.js` (без сборщика), их отдаёт тот же сервер.
 - Зависимости: `pyproject.toml` + `uv.lock`.
 - Запуск: `docker compose up --build` (образ `python:3.12-slim`), для разработки `uv run uvicorn app.main:app`, тесты `uv run pytest`.
 
@@ -18,7 +18,7 @@ app/
   db.py         схема SQLite, сохранение поездки, выборка за интервал
   summary.py    расчёт сводки (чистая функция)
   seed.py       загрузка JSON-файла через ту же функцию сохранения
-static/index.html
+static/index.html, app.css, app.js
 data/trips.json пример из задания + несколько своих поездок
 tests/
 Dockerfile, docker-compose.yml, pyproject.toml, uv.lock, README.md
@@ -116,7 +116,7 @@ CREATE INDEX trips_start_utc ON trips(start_utc);
 - Сводка дня (всего + наличные/карта) и список поездок.
 - Кнопки «← пред. день», «след. день →», поле выбора даты; дата в URL `/?date=YYYY-MM-DD`.
 - Без `?date=` клиент запрашивает `/api/days/today`.
-- Суммы — числа без валюты. Формы добавления нет: добавление через API (`curl` в README).
+- Суммы — числа без валюты. Есть форма добавления поездки: ошибки API показываются у полей, 200 — «Уже сохранено, дубля нет», 409 — понятная ошибка у поля ID (изменено на этапе 3).
 
 ## Допущения (в README)
 
